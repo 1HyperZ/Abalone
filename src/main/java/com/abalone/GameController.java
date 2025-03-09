@@ -40,6 +40,8 @@ public class GameController {
                 gameManager.getBoard().applyMove(move);
                 gameView.renderBoard(gameManager.getBoard());
                 switchTurn(); // Switch to AI turn after a valid move
+                gameManager.updatePlayersScores();
+                gameView.updateScores(gameManager.getHumanScore(), gameManager.getAIScore());
                 if (gameManager.isGameOver()) {
                     gameView.showGameOver(gameManager.getWinner() + " wins!");
                 }
@@ -94,6 +96,8 @@ public class GameController {
         gameManager = new GameManager(); // Reset game state
         gameView.renderBoard(gameManager.getBoard());
         gameView.updateTurnLabel("Human");
+        gameManager.updatePlayersScores();
+        gameView.updateScores(gameManager.getHumanScore(), gameManager.getAIScore());
         isHumanTurn = true;
     }
 }

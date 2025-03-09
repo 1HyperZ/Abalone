@@ -5,12 +5,16 @@ public class GameManager {
     private Player humanPlayer;
     private AIPlayer aiPlayer;
     private boolean isHumanTurn;
+    private int humanScore;
+    private int aiScore;
 
     public GameManager() {
         this.humanPlayer = new Player("Human");
         this.aiPlayer = new AIPlayer("AI");
         this.board = new Board(aiPlayer, humanPlayer);
         this.isHumanTurn = true;
+        this.aiScore = 14;
+        this.humanScore = 14;
     }
 
     public Board getBoard() {
@@ -25,6 +29,13 @@ public class GameManager {
         return humanPlayer;
     }
     
+    public int getHumanScore() {
+        return humanScore;
+    }
+
+    public int getAIScore() {
+        return aiScore;
+    }
 
     public boolean isHumanTurn() {
         return isHumanTurn;
@@ -34,29 +45,29 @@ public class GameManager {
         isHumanTurn = !isHumanTurn;
     }
 
-    public boolean isGameOver() {
+    public void updatePlayersScores() {
         int humanCount  = 0, aiCount  = 0;
     
         for (Player p : board.getPlayersOnBoard()) {
             if (p.getName().equals(humanPlayer.getName())) humanCount++;
             if (p.getName().equals(aiPlayer.getName())) aiCount ++;
         }
-    
-        return humanCount <= 8 || aiCount <= 8; // Only return true if a player lost
+        
+        this.humanScore = humanCount;
+        this.aiScore = aiCount;
+    }
+
+    public boolean isGameOver() {
+        return this.humanScore <= 8 || this.aiScore <= 8; // Only return true if a player lost
     }
     
     public String getWinner() {
-        int humanCount  = 0, aiCount  = 0;
-    
-        for (Player p : board.getPlayersOnBoard()) {
-            if (p.getName().equals(humanPlayer.getName())) humanCount++;
-            if (p.getName().equals(aiPlayer.getName())) aiCount ++;
-        }
-    
-        if (aiCount <= 8) return "Human";  // White lost, so Black wins
-        if (humanCount <= 8) return "AI";  // Black lost, so White wins
+        
+        if (this.aiScore <= 8) return "Human";  // White lost, so Black wins
+        if (this.humanScore <= 8) return "AI";  // Black lost, so White wins
     
         return "No winner";  // Shouldn't happen in a finished game
     }
+
     
 }

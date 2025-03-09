@@ -17,6 +17,9 @@ public class GameView {
     private GameController controller;
     private Pane boardGrid;
     private Label turnLabel;
+    private Label humanScoreLabel;
+    private Label aiScoreLabel;
+
     
 
     /**
@@ -27,28 +30,41 @@ public class GameView {
         this.stage = stage;
         this.boardGrid = new Pane();
         this.turnLabel = new Label("Turn: Human");
-
+        this.humanScoreLabel = new Label("Player 1: 14");
+        this.aiScoreLabel = new Label("Player 2: 14");
         
-        Button restartButton = new Button("Restart Game");
-        restartButton.setOnAction(e -> controller.startNewGame());
-
+        humanScoreLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
+        aiScoreLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
         
-        BorderPane root = new BorderPane();
+        
+
+        // add topPanel to the top
+        HBox topPanel = new HBox(20, turnLabel, humanScoreLabel, aiScoreLabel);
+        topPanel.setAlignment(Pos.CENTER);
+        topPanel.setPadding(new Insets(10));
 
         // put your boardGrid inside a StackPane
         StackPane boardContainer = new StackPane(boardGrid);
-        root.setCenter(boardContainer);
 
-        // add topPanel to the top
-        HBox topPanel = new HBox(20, turnLabel, restartButton);
-        topPanel.setAlignment(Pos.CENTER);
-        topPanel.setPadding(new Insets(10));
+        Button restartButton = new Button("Start New Game");
+        restartButton.setOnAction(e -> controller.startNewGame());
+
+        Button instructionsButton = new Button("Instructions");
+        instructionsButton.setOnAction(e -> showInstructions());
+
+        HBox bottomPanel = new HBox(20, restartButton, instructionsButton);
+        bottomPanel.setAlignment(Pos.CENTER);
+        bottomPanel.setPadding(new Insets(10));
+
+        BorderPane root = new BorderPane();
         root.setTop(topPanel);
+        root.setCenter(boardContainer);
+        root.setBottom(bottomPanel);
+
 
         Scene scene = new Scene(root, 800, 800);
         stage.setScene(scene);
         stage.show();
-
     }
 
     /**
@@ -152,10 +168,6 @@ public class GameView {
     }
     
     
-    
-    
-    
-    
     public void showGameOver(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Game Over");
@@ -172,6 +184,31 @@ public class GameView {
     */
     public void updateTurnLabel(String text) {
         turnLabel.setText("Turn: " + text);
+    }
+
+    /**
+     * Updates the two score labels at the top of the screen.
+     * Call this whenever the scores change (e.g., after each move).
+     */
+    public void updateScores(int humanScore, int aiScore) {
+        humanScoreLabel.setText("Player 1: " + humanScore);
+        aiScoreLabel.setText("Player 2: " + aiScore);
+    }
+
+    /**
+     * Displays an instructions popup dialog.
+     */
+    private void showInstructions() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Instructions");
+        alert.setHeaderText("How to Play Abalone");
+        alert.setContentText(
+            "1. Select one of your marbles (or a group in a straight line).\n" +
+            "2. Move it to an adjacent cell or push opponent marbles.\n" +
+            "3. The first to push 6 opponent marbles off the board wins.\n" +
+            "...Add more details here..."
+        );
+        alert.showAndWait();
     }
 
     
