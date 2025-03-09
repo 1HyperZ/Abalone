@@ -355,14 +355,16 @@ private void initializeAxialMapping() {
             if (entry.getValue().equals(player)) {
                 int from = entry.getKey();
                 for (int to : graph.get(from)) {
-                    if (!positions.containsKey(to)) {
-                        moves.add(new Move(from, to));
+                    Move move = new Move(from, to);
+                    if (isValidMove(move)) {
+                        moves.add(move);
                     }
                 }
             }
         }
         return moves;
     }
+    
 
     public List<Player> getPlayersOnBoard() {
         return new ArrayList<>(positions.values()); // Returns all players with pieces on the board
