@@ -142,9 +142,9 @@ public class Board {
     
     /**
      * Given a move from cell 'from' to cell 'to', compute the next cell in that direction.
-     * Returns the index of the next cell, or null if off-board.
+     * Returns the index of the next cell, or -1 if off-board.
      */
-    public Integer getNextCell(int from, int to) {
+    public int getNextCell(int from, int to) {
         int[] fromCoord = indexToCoord.get(from);
         int[] toCoord = indexToCoord.get(to);
         int dq = toCoord[0] - fromCoord[0];
@@ -152,8 +152,10 @@ public class Board {
         int nextQ = toCoord[0] + dq;
         int nextR = toCoord[1] + dr;
         String key = nextQ + "," + nextR;
-        return coordToIndex.get(key); // will be null if off-board
+        Integer nextIndex = coordToIndex.get(key);
+        return (nextIndex == null) ? -1 : nextIndex;
     }
+
 
     
     /**
@@ -218,27 +220,66 @@ private void initializeAxialMapping() {
      * Checks if a move is valid.
      */
     public boolean isValidMove(Move move) {
-        // Simple move: destination is empty.
-        if (!positions.containsKey(move.getTo())) {
-            return graph.get(move.getFrom()).contains(move.getTo());
-        } else {
-            // Attempting a push.
-            Player fromPlayer = positions.get(move.getFrom());
-            Player toPlayer = positions.get(move.getTo());
-            // Cannot push your own piece.
-            if (fromPlayer.getName().equals(toPlayer.getName())) {
-                return false;
-            }
-            // Check if destination is a neighbor.
-            if (!graph.get(move.getFrom()).contains(move.getTo())) {
-                return false;
-            }
-            // Get the next cell in the same direction.
-            Integer nextCell = getNextCell(move.getFrom(), move.getTo());
-            // Push is valid if nextCell is off-board (null) or empty.
-            return (nextCell == null || !positions.containsKey(nextCell));
+        int from = move.getFrom();
+        int to = move.getTo();
+        
+        // Compute direction vector (dq, dr) from 'from' to 'to'.
+        int[] fromCoord = indexToCoord.get(from);
+        int[] toCoord = indexToCoord.get(to);
+        int dq = toCoord[0] - fromCoord[0];
+        int dr = toCoord[1] - fromCoord[1];
+        boolean isUnitDirection = (dq == 1 && dr == 0) ||
+                          (dq == -1 && dr == 0) ||
+                          (dq == 0 && dr == 1) ||
+                          (dq == 0 && dr == -1) ||
+                          (dq == 1 && dr == -1) ||
+                          (dq == -1 && dr == 1);
+        if (!isUnitDirection) {
+            return false;
         }
+
+        // Get the contiguous group of your pieces starting at 'from'.
+        List<Integer> group = getContiguousGroup(from, dq, dr);
+        // The "leading" cell is the last cell in the group.
+        int leading = group.get(group.size() - 1);
+        // Check the cell immediately in front of the group.
+        int next = getNextCellInDirection(leading, dq, dr);
+        
+        // Simple move: if next is on-board and empty.
+        if (next != -1 && !positions.containsKey(next)) {
+            return true;
+        }
+        
+        // Otherwise, if next is occupied, attempt push.
+        Player mover = positions.get(from);
+        // If next is off-board (-1) or occupied by your own piece, push is not valid.
+        if (next == -1 || mover.getName().equals(positions.get(next).getName())) {
+            return false;
+        }
+        
+        // Count opponent contiguous group starting from 'next'.
+        List<Integer> opponentGroup = new ArrayList<>();
+        int current = next;
+        while (current != -1 && positions.containsKey(current) &&
+               !positions.get(current).getName().equals(mover.getName())) {
+            opponentGroup.add(current);
+            int nextOpponent = getNextCellInDirection(current, dq, dr);
+            if (nextOpponent == -1) break;
+            current = nextOpponent;
+        }
+        
+        // Valid push if your group size > opponent group size,
+        // and the cell immediately after the opponent group is off-board or empty.
+        if (group.size() > opponentGroup.size()) {
+            int pushDest = getNextCellInDirection(opponentGroup.get(opponentGroup.size() - 1), dq, dr);
+            if (pushDest == -1 || !positions.containsKey(pushDest)) {
+                return true;
+            }
+        }
+        return false;
     }
+    
+    
     
     
 
@@ -246,29 +287,65 @@ private void initializeAxialMapping() {
      * Applies a move if it is valid.
      */
     public void applyMove(Move move) {
-        if (isValidMove(move)) {
-            // Simple move.
-            if (!positions.containsKey(move.getTo())) {
-                Player player = positions.remove(move.getFrom());
-                positions.put(move.getTo(), player);
-            } else {
-                // Push move.
-                // Get the next cell in the push direction.
-                Integer nextCell = getNextCell(move.getFrom(), move.getTo());
-                Player player = positions.remove(move.getFrom());
-                if (nextCell == null) {
-                    // Opponent marble is pushed off the board.
-                    positions.remove(move.getTo());
+        int from = move.getFrom();
+        int to = move.getTo();
+        
+        // Compute direction vector.
+        int[] fromCoord = indexToCoord.get(from);
+        int[] toCoord = indexToCoord.get(to);
+        int dq = toCoord[0] - fromCoord[0];
+        int dr = toCoord[1] - fromCoord[1];
+        
+        // Get your contiguous group.
+        List<Integer> group = getContiguousGroup(from, dq, dr);
+        int leading = group.get(group.size() - 1);
+        int next = getNextCellInDirection(leading, dq, dr);
+        
+        // Simple move: move your group one cell forward.
+        if (next != -1 && !positions.containsKey(next)) {
+            // Move from the far end back to avoid overwriting.
+            for (int i = group.size() - 1; i >= 0; i--) {
+                int pos = group.get(i);
+                Player mover = positions.remove(pos);
+                int dest = getNextCellInDirection(pos, dq, dr);
+                positions.put(dest, mover);
+            }
+        } else {
+            // Push move.
+            // Count opponent contiguous group.
+            List<Integer> opponentGroup = new ArrayList<>();
+            int current = next;
+            Player mover = positions.get(from);
+            while (current != -1 && positions.containsKey(current) &&
+                   !positions.get(current).getName().equals(mover.getName())) {
+                opponentGroup.add(current);
+                int nextOpponent = getNextCellInDirection(current, dq, dr);
+                if (nextOpponent == -1) break;
+                current = nextOpponent;
+            }
+            // Move opponent group first, from farthest to nearest.
+            for (int i = opponentGroup.size() - 1; i >= 0; i--) {
+                int oppPos = opponentGroup.get(i);
+                int dest = getNextCellInDirection(oppPos, dq, dr);
+                if (dest == -1) {
+                    // Opponent ball is pushed off-board.
+                    positions.remove(oppPos);
                 } else {
-                    // Move opponent marble to the next cell.
-                    Player opponent = positions.remove(move.getTo());
-                    positions.put(nextCell, opponent);
+                    Player opp = positions.remove(oppPos);
+                    positions.put(dest, opp);
                 }
-                // Move player's marble into the destination.
-                positions.put(move.getTo(), player);
+            }
+            // Then, move your group forward.
+            for (int i = group.size() - 1; i >= 0; i--) {
+                int pos = group.get(i);
+                Player m = positions.remove(pos);
+                int dest = getNextCellInDirection(pos, dq, dr);
+                positions.put(dest, m);
             }
         }
     }
+    
+    
     
 
     /**
@@ -330,4 +407,41 @@ private void initializeAxialMapping() {
         return validMoves;
     }
     
+    /**
+     * Returns a list of contiguous indices (in-line) starting from 'start' that are occupied by the same player.
+     */
+    private List<Integer> getContiguousGroup(int start, int dq, int dr) {
+        List<Integer> group = new ArrayList<>();
+        int current = start;
+        Player mover = positions.get(start);
+        // Add the starting cell.
+        group.add(current);
+        while (true) {
+            int next = getNextCellInDirection(current, dq, dr);
+            if (next == -1) break; // Off-board
+            if (positions.containsKey(next) && positions.get(next).getName().equals(mover.getName())) {
+                group.add(next);
+                current = next;
+            } else {
+                break;
+            }
+        }
+        return group;
+    }
+
+
+    /**
+     * Returns the index of the next cell in the given direction (dq, dr) from the cell at index.
+     * Returns -1 if off-board.
+     */
+    public int getNextCellInDirection(int index, int dq, int dr) {
+        int[] coord = indexToCoord.get(index);
+        int nextQ = coord[0] + dq;
+        int nextR = coord[1] + dr;
+        String key = nextQ + "," + nextR;
+        Integer nextIndex = coordToIndex.get(key);
+        return (nextIndex == null) ? -1 : nextIndex;
+    }
+
+
 }
