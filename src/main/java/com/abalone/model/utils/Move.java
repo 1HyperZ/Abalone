@@ -1,4 +1,4 @@
-package com.abalone;
+package com.abalone.model.utils;
 
 public class Move {
     private int from;

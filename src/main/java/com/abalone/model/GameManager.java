@@ -1,4 +1,7 @@
-package com.abalone;
+package com.abalone.model;
+
+import com.abalone.model.utils.Players.AIPlayer;
+import com.abalone.model.utils.Players.Player;
 
 public class GameManager {
     private Board board;

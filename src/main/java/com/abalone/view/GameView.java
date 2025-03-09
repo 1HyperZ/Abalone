@@ -1,4 +1,8 @@
-package com.abalone;
+package com.abalone.view;
+
+import com.abalone.controller.GameController;
+import com.abalone.model.Board;
+import com.abalone.model.utils.Players.Player;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

@@ -1,4 +1,7 @@
-package com.abalone;
+package com.abalone.controller;
+
+import com.abalone.model.GameManager;
+import com.abalone.view.GameView;
 
 import javafx.application.Application;
 import javafx.stage.Stage;

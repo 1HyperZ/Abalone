@@ -1,7 +1,12 @@
-package com.abalone;
+package com.abalone.controller;
 
 import java.util.List;
 import java.util.Random;
+
+import com.abalone.model.GameManager;
+import com.abalone.model.utils.Move;
+import com.abalone.model.utils.Players.Player;
+import com.abalone.view.GameView;
 
 public class GameController {
     private GameManager gameManager;

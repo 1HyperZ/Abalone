@@ -1,4 +1,4 @@
-package com.abalone;
+package com.abalone.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,6 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.abalone.model.utils.Move;
+import com.abalone.model.utils.Players.Player;
 
 public class Board {
     private Map<Integer, List<Integer>> graph;

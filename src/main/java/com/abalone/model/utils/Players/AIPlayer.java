@@ -1,7 +1,10 @@
-package com.abalone;
+package com.abalone.model.utils.Players;
 
 import java.util.List;
 import java.util.Random;
+
+import com.abalone.model.Board;
+import com.abalone.model.utils.Move;
 
 public class AIPlayer extends Player {
     private Random random;
