@@ -40,6 +40,9 @@ public class GameController {
                 gameManager.getBoard().applyMove(move);
                 gameView.renderBoard(gameManager.getBoard());
                 switchTurn(); // Switch to AI turn after a valid move
+                if (gameManager.isGameOver()) {
+                    gameView.showGameOver(gameManager.getWinner() + " wins!");
+                }
             } else {
                 System.out.println("Invalid move from " + selectedPosition + " to " + toPosition);
             }
