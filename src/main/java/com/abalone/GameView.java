@@ -1,6 +1,5 @@
 package com.abalone;
 
-import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -11,11 +10,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.layout.*;
-import javafx.stage.Stage;
 
 public class GameView {
     private Stage stage;
@@ -62,12 +57,7 @@ public class GameView {
      */
     public void setController(GameController controller) {
         this.controller = controller;
-    }
-
-    private Circle selectedPiece = null; // Track selected piece
-    private int selectedPosition = -1; // Track selected board position
-
-    
+    } 
 
     public void renderBoard(Board board) {
         boardGrid.getChildren().clear();

@@ -77,7 +77,6 @@ public class Board {
         // The rows (r from -4 to 4) have cell counts: {5,6,7,8,9,8,7,6,5} respectively.        
         int idx = 0;
         for (int i = 0; i < rowCellCounts.length; i++) {
-            int cellCount = rowCellCounts[i];
             int r = rStart + i;
             // For a hexagon of radius 4, the q values range:
             int qMin = Math.max(-4, -r - 4);
@@ -170,7 +169,6 @@ private void initializeAxialMapping() {
     int rStart = -4;
     int idx = 0;
     for (int i = 0; i < rowCellCounts.length; i++) {
-        int cellCount = rowCellCounts[i];
         int r = rStart + i;
         int qMin = Math.max(-4, -r - 4);
         int qMax = Math.min(4, -r + 4);

@@ -3,9 +3,6 @@ package com.abalone;
 import java.util.List;
 import java.util.Random;
 
-import java.util.List;
-import java.util.Random;
-
 public class AIPlayer extends Player {
     private Random random;
 
