@@ -10,6 +10,8 @@ import java.util.Set;
 import com.abalone.model.utils.Move;
 import com.abalone.model.utils.Players.Player;
 
+import javafx.scene.paint.Color;
+
 public class Board {
     private Map<Integer, List<Integer>> graph;
     private Map<Integer, Player> positions; // Stores player pieces on the board
@@ -446,5 +448,11 @@ private void initializeAxialMapping() {
         return (nextIndex == null) ? -1 : nextIndex;
     }
 
+
+    public Color getPieceColor(int position) {
+        Player player = getPlayerAt(position);
+        if (player == null) return Color.LIGHTGRAY;
+        return player.getName().equals("AI") ? Color.WHITE : Color.BLACK;
+    }
 
 }
