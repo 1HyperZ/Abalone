@@ -1,5 +1,6 @@
 package com.abalone.model;
 
+import com.abalone.model.utils.Move;
 import com.abalone.model.utils.Players.AIPlayer;
 import com.abalone.model.utils.Players.Player;
 
@@ -18,6 +19,10 @@ public class GameManager {
         this.isHumanTurn = true;
         this.aiScore = 14;
         this.humanScore = 14;
+    }
+
+    public Move getAIMove() {
+       return aiPlayer.generateAIMove(board);
     }
 
     public Board getBoard() {

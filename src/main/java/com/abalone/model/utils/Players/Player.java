@@ -22,8 +22,4 @@ public class Player {
     public void setScore(int score) {
         this.score = score;
     }
-
-    public Move makeMove(Board board) {
-        return null; // Human player moves are handled by UI
-    }
 }

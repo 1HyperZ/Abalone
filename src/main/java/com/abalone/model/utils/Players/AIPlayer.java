@@ -14,15 +14,14 @@ public class AIPlayer extends Player {
         this.random = new Random();
     }
 
-    @Override
-    public Move makeMove(Board board) {
+    public Move generateAIMove(Board board) {
         List<Move> possibleMoves = board.getPossibleMoves(this);
-        if (possibleMoves.isEmpty()) return null; // No moves available
-
-        Move selectedMove = possibleMoves.get(random.nextInt(possibleMoves.size()));
-        board.applyMove(selectedMove); // Apply AI move
-
-        return selectedMove; // Return move for logging/debugging
+        if (possibleMoves.isEmpty()) {
+            System.out.println("No valid moves for AI!");
+            return null;
+        }
+        Move selectedMove = possibleMoves.get(new Random().nextInt(possibleMoves.size()));
+        return selectedMove;
     }
 
 }

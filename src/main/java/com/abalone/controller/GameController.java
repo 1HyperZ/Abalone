@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 import com.abalone.model.GameManager;
 import com.abalone.model.utils.Move;
+import com.abalone.model.utils.Players.AIPlayer;
 import com.abalone.model.utils.Players.Player;
 import com.abalone.view.GameView;
 
@@ -68,20 +69,15 @@ public class GameController {
         isHumanTurn = !isHumanTurn;
         gameView.updateTurnLabel(isHumanTurn ? "Human" : "AI");
         if (!isHumanTurn) {
-            aiMove();
+            applyAIMove(gameManager.getAIMove());
         }
     }
 
     /**
      * Makes a random valid move for the AI.
-     */
-    private void aiMove() {
-        List<Move> possibleMoves = gameManager.getBoard().getPossibleMoves(gameManager.getAIPlayer());
-        if (possibleMoves.isEmpty()) {
-            System.out.println("No valid moves for AI!");
-            return;
-        }
-        Move selectedMove = possibleMoves.get(new Random().nextInt(possibleMoves.size()));
+        * @param selectedMove the selected move to apply 
+    */
+    private void applyAIMove(Move selectedMove) {
         System.out.println("AI moves: " + selectedMove);
         gameManager.getBoard().applyMove(selectedMove);
         gameView.renderBoard(gameManager.getBoard());
