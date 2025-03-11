@@ -7,11 +7,9 @@ import com.abalone.model.Board;
 import com.abalone.model.utils.Move;
 
 public class AIPlayer extends Player {
-    private Random random;
 
     public AIPlayer(String name) {
         super(name);
-        this.random = new Random();
     }
 
     public Move generateAIMove(Board board) {

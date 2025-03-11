@@ -1,21 +1,18 @@
 package com.abalone.controller;
 
-import java.util.List;
-import java.util.Random;
 import com.abalone.model.GameManager;
 import com.abalone.model.utils.Move;
-import com.abalone.model.utils.Players.AIPlayer;
 import com.abalone.model.utils.Players.Player;
 import com.abalone.view.GameView;
 
 /**
- * GameController manages user moves and AI moves during the game.
+ * GameController class manages user moves and AI moves during the game.
  */
 public class GameController {
     private GameManager gameManager;
     private GameView gameView;
     private boolean isHumanTurn;
-    private int selectedPosition = -1; // No piece selected initially so -1
+    private int selectedPosition = -1; // No piece selected at start so -1
 
     public GameController(GameManager gameManager, GameView gameView) {
         this.gameManager = gameManager;
@@ -24,28 +21,28 @@ public class GameController {
     }
 
     /**
-     * Processes a click on a board cell.
-     * If no piece is selected, selects a human piece.
-     * If a piece is already selected, attempts to move it.
-     * @param toPosition the index of the clicked cell
+     * Called when there is a click on a board cell.
+     * If no piece is selected, highlights a human piece.
+     * If a piece is already selected, try to move the previously selected piece to the new clicked piece.
+     * @param clickedPosition the index of the clicked cell
      */
-    public void handleMove(int toPosition) {
-        System.out.println("Clicked position: " + toPosition);
+    public void handleMove(int clickedPosition) {
+        System.out.println("Clicked position: " + clickedPosition);
         if (selectedPosition == -1) {
             // Select a human piece.
-            Player pieceOwner = gameManager.getBoard().getPlayerAt(toPosition);
-            if (pieceOwner != null && pieceOwner.getName().equals(gameManager.getHumanPlayer().getName())) {
-                selectedPosition = toPosition;
+            Player pieceOwner = gameManager.getBoard().getPlayerAt(clickedPosition);
+            if (pieceOwner != null && pieceOwner.getName().equals(gameManager.getHumanPlayerName())) {
+                selectedPosition = clickedPosition;
                 System.out.println("Selected piece at: " + selectedPosition);
-                gameView.highlightPiece(toPosition);
+                gameView.highlightPiece(clickedPosition);
             } else {
                 System.out.println("Selection failed! Not a human piece.");
             }
         } else {
-            // Attempt to move the selected piece.
-            Move move = new Move(selectedPosition, toPosition);
+            // try to move the previously selected piece to the new clicked piece.
+            Move move = new Move(selectedPosition, clickedPosition);
             if (gameManager.getBoard().isValidMove(move)) {
-                System.out.println("Valid move from " + selectedPosition + " to " + toPosition);
+                System.out.println("Valid move from " + selectedPosition + " to " + clickedPosition);
                 gameManager.getBoard().applyMove(move);
                 gameView.renderBoard(gameManager.getBoard());
                 switchTurn();
@@ -55,7 +52,7 @@ public class GameController {
                     gameView.showGameOver(gameManager.getWinner() + " wins!");
                 }
             } else {
-                System.out.println("Invalid move from " + selectedPosition + " to " + toPosition);
+                System.out.println("Invalid move from " + selectedPosition + " to " + clickedPosition);
             }
             selectedPosition = -1;
             gameView.clearHighlight();

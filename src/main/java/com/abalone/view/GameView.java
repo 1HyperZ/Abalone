@@ -132,13 +132,11 @@ public class GameView {
      * @param position the board cell index to be highlighted
      */
     public void highlightPiece(int position) {
-        System.out.println("Trying to highlight position: " + position);
         for (javafx.scene.Node node : boardGrid.getChildren()) {
             if (node instanceof Circle) {
                 Circle piece = (Circle) node;
-                System.out.println("Checking piece at position: " + piece.getUserData());
                 if ((int) piece.getUserData() == position) {
-                    System.out.println("Highlighting piece at: " + position);
+                    System.out.println("Highlighted piece at: " + position);
                     piece.setStroke(Color.RED);
                     piece.setStrokeWidth(3);
                     return;
