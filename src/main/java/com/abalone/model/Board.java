@@ -19,14 +19,16 @@ import javafx.scene.paint.Color;
 public class Board {
     private Map<Integer, List<Integer>> graph; // Graph of neighbors for each cell
     private Map<Integer, Player> positions; // Stores player pieces on the board
-    Player aiPlayer;
-    Player humanPlayer;
+    private Player aiPlayer;
+    private Player humanPlayer;
     private Map<Integer, int[]> indexToCoord; 
     private Map<String, Integer> coordToIndex;
+    private List<int[]> directions ;
+
 
     /**
      * Constructs a new Board with the specified AI and human players.
-     * Initializes axial coordinate mappings, builds the neighbor graph, and places initial pieces.
+     * Creates axial direction list for all possible directions, Initializes axial coordinate mappings, builds the neighbor graph, and places initial pieces.
      *
      * @param aiPlayer the AI player
      * @param humanPlayer the human player
@@ -36,8 +38,11 @@ public class Board {
         positions = new HashMap<>();
         this.aiPlayer = aiPlayer;
         this.humanPlayer = humanPlayer;
+        directions = List.of(new int[]{1, 0}, new int[]{-1, 0}, new int[]{0, 1}, new int[]{0, -1}, new int[]{1, -1}, new int[]{-1, 1}); //Create a list of directions
         initializeAxialHashMaps();  // Build axial coordinate mappings for the board
-        initializeBoard();         // Build neighbor graph and place pieces
+        initializeGraph();         // Build neighbor graph
+        placeStartingPieces();
+
     }
     
     /**
@@ -67,13 +72,9 @@ public class Board {
      * Initializes the board by constructing the neighbor graph using axial directions,
      * and placing the initial pieces on the board.
      */
-    private void initializeBoard() {        
+    private void initializeGraph() {        
         //build the neighbor graph using axial directions.
-        // axial directions are: (1, 0), (-1, 0), (0, 1), (0, -1), (1, -1), (-1, 1)
-        int[][] directions = {
-            {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, -1}, {-1, 1}
-        };
-        
+
         //temporary graph using sets to not add duplicates.
         Map<Integer, Set<Integer>> tempGraph = new HashMap<>();
         for (int i = 0; i < 61; i++) {
@@ -97,9 +98,7 @@ public class Board {
         // Convert the sets to lists and insert to the main graph.
         for (int i = 0; i < 61; i++) {
             graph.put(i, new ArrayList<>(tempGraph.get(i)));
-        }
-        
-        placeStartingPieces();
+        }        
     }
     
     /**
@@ -132,7 +131,7 @@ public class Board {
      *
      * @param from the starting cell index
      * @param to the destination cell index
-     * @return the index of the next cell, or -1 if its off board
+     * @return the index of the next cell index, or -1 if its off board
      */
     public int getNextCell(int from, int to) {
         int[] fromCoord = indexToCoord.get(from);
@@ -145,9 +144,9 @@ public class Board {
         Integer nextIndex = coordToIndex.get(key);
         return (nextIndex == null) ? -1 : nextIndex;
     }
-//----------------------------------------------------------------------------------------------------------------------------
+
     /**
-     * Checks if a given move is valid. Supports simple moves and push moves.
+     * Checks if a given move is valid.
      *
      * @param move the move to validate
      * @return true if the move is valid, false otherwise
@@ -156,62 +155,50 @@ public class Board {
         int from = move.getFrom();
         int to = move.getTo();
         
-        // Compute direction vector (dq, dr) from 'from' to 'to'.
+        // Calcluates the next the direction of 'from' to 'to' and checks that it exits.
         int[] fromCoord = indexToCoord.get(from);
         int[] toCoord = indexToCoord.get(to);
         int dq = toCoord[0] - fromCoord[0];
         int dr = toCoord[1] - fromCoord[1];
-        boolean isUnitDirection = (dq == 1 && dr == 0) ||
-                          (dq == -1 && dr == 0) ||
-                          (dq == 0 && dr == 1) ||
-                          (dq == 0 && dr == -1) ||
-                          (dq == 1 && dr == -1) ||
-                          (dq == -1 && dr == 1);
-        if (!isUnitDirection) {
+
+        int[] direction = {dq, dr};
+        if (!directions.stream().anyMatch(d -> java.util.Arrays.equals(d, direction))) {
             return false;
         }
         
-        // Get the contiguous group of the mover starting at 'from'.
-        List<Integer> group = getContiguousGroup(from, dq, dr);
+        // Get the list of pieces in the direction starting at 'from'.
+        List<Integer> group = getListOfPiecesInDirection(from, dq, dr);
         int leading = group.get(group.size() - 1);
         int next = getNextCellInDirection(leading, dq, dr);
         
-        // Simple move: if next cell is on-board and empty.
+        // Ok if next cell is on the board and empty.
         if (next != -1 && !positions.containsKey(next)) {
             return true;
         }
         
-        // Push move: next must be occupied by opponent.
-        Player mover = positions.get(from);
-        if (next == -1 || mover.getName().equals(positions.get(next).getName())) {
+        // Not okay if next is off board.
+        if (next == -1) {
             return false;
         }
         
-        // Count contiguous opponent group starting from 'next'.
-        List<Integer> opponentGroup = new ArrayList<>();
-        int current = next;
-        while (current != -1 && positions.containsKey(current) &&
-               !positions.get(current).getName().equals(mover.getName())) {
-            opponentGroup.add(current);
-            int nextOpponent = getNextCellInDirection(current, dq, dr);
-            if (nextOpponent == -1) break;
-            current = nextOpponent;
-        }
+        // Gets the opponent list of pieces in the direction starting from 'next'.
+        List<Integer> opponentGroup = getListOfPiecesInDirection(next, dq, dr);
         
-        // Valid push if mover's group is larger than opponent group and
-        // the cell immediately after opponent group is off-board or empty.
+        // OK push if mover's group is larger than opponent group and
+        // the destination cell is either off board or empty.
         if (group.size() > opponentGroup.size()) {
-            int pushDest = getNextCellInDirection(opponentGroup.get(opponentGroup.size() - 1), dq, dr);
-            if (pushDest == -1 || !positions.containsKey(pushDest)) {
+            int pushDestination = getNextCellInDirection(opponentGroup.get(opponentGroup.size() - 1), dq, dr);
+            if (pushDestination == -1 || !positions.containsKey(pushDestination)) {
                 return true;
             }
         }
+
+        // false in any other case.
         return false;
     }
     
     /**
      * Applies a valid move to the board.
-     * Supports both simple moves and push moves.
      *
      * @param move the move to apply
      */
@@ -219,18 +206,18 @@ public class Board {
         int from = move.getFrom();
         int to = move.getTo();
         
-        // Compute direction vector.
+        // Calcluates the next the direction of 'from' to 'to' and checks that it exits.
         int[] fromCoord = indexToCoord.get(from);
         int[] toCoord = indexToCoord.get(to);
         int dq = toCoord[0] - fromCoord[0];
         int dr = toCoord[1] - fromCoord[1];
         
-        // Get the mover's contiguous group.
-        List<Integer> group = getContiguousGroup(from, dq, dr);
-        int leading = group.get(group.size() - 1);
-        int next = getNextCellInDirection(leading, dq, dr);
+        // Get the mover's list of pieces in the same direction.
+        List<Integer> group = getListOfPiecesInDirection(from, dq, dr);
+        int leadingPiece = group.get(group.size() - 1); //leading piece in the direction of the move.
+        int next = getNextCellInDirection(leadingPiece, dq, dr);
         
-        // Simple move: move group one cell forward.
+        // Regular move: move one cell forward if the next cell is not off board and empty.
         if (next != -1 && !positions.containsKey(next)) {
             for (int i = group.size() - 1; i >= 0; i--) {
                 int pos = group.get(i);
@@ -240,42 +227,33 @@ public class Board {
             }
         } else {
             // Push move.
-            List<Integer> opponentGroup = new ArrayList<>();
-            int current = next;
-            Player mover = positions.get(from);
-            while (current != -1 && positions.containsKey(current) &&
-                   !positions.get(current).getName().equals(mover.getName())) {
-                opponentGroup.add(current);
-                int nextOpponent = getNextCellInDirection(current, dq, dr);
-                if (nextOpponent == -1) break;
-                current = nextOpponent;
-            }
-            // Move opponent group first, from farthest to nearest.
+            List<Integer> opponentGroup = getListOfPiecesInDirection(next, dq, dr);
+            // Move opponent group first, from last to first.
             for (int i = opponentGroup.size() - 1; i >= 0; i--) {
                 int oppPos = opponentGroup.get(i);
-                int dest = getNextCellInDirection(oppPos, dq, dr);
-                if (dest == -1) {
+                int destination = getNextCellInDirection(oppPos, dq, dr);
+                // If the destination is off board, remove the piece.
+                if (destination == -1) {
                     positions.remove(oppPos);
                 } else {
                     Player opp = positions.remove(oppPos);
-                    positions.put(dest, opp);
+                    positions.put(destination, opp);
                 }
             }
-            // Then move your group forward.
+            // Afterwards move your group forward.
             for (int i = group.size() - 1; i >= 0; i--) {
                 int pos = group.get(i);
-                Player m = positions.remove(pos);
+                Player mover = positions.remove(pos);
                 int dest = getNextCellInDirection(pos, dq, dr);
-                positions.put(dest, m);
+                positions.put(dest, mover);
             }
         }
     }
     
     /**
      * Returns a list of all possible moves for the specified player.
-     * Considers both simple moves and push moves.
-     *
-     * @param player the player for whom to get moves
+     * 
+     * @param player the player to get possible moves for
      * @return a list of valid moves
      */
     public List<Move> getPossibleMoves(Player player) {
@@ -294,90 +272,33 @@ public class Board {
         return moves;
     }
     
-    /**
-     * Returns a list of all players currently on the board.
-     *
-     * @return a list of players on the board
-     */
-    public List<Player> getPlayersOnBoard() {
-        return new ArrayList<>(positions.values());
+   
+    public Map<Integer, Player> getPositionsMap() {
+        return positions;
     }
     
-    /**
-     * Prints the board state for debugging.
-     */
-    public void printBoard() {
-        System.out.println("Board State:");
-        for (int i = 0; i < 61; i++) {
-            System.out.print(positions.containsKey(i) ? positions.get(i).getName().charAt(0) : "-");
-            if (i % 7 == 6) System.out.println();
-        }
-    }
-
-    /**
-     * Checks whether a given position is valid on the board.
-     *
-     * @param position the position index
-     * @return true if the position exists on the board, false otherwise
-     */
-    public boolean isValidPosition(int position) {
-        return graph.containsKey(position);
-    }
     
     /**
-     * Returns the player at the specified position, or null if none.
-     *
-     * @param position the board cell index
-     * @return the player at that cell, or null if empty
-     */
-    public Player getPlayerAt(int position) {
-        return positions.get(position);
-    }
-    
-    /**
-     * Returns a list of valid moves (empty neighboring positions) for the specified position.
-     *
-     * @param position the board cell index
-     * @return a list of valid move destinations
-     */
-    public List<Integer> getValidMoves(int position) {
-        List<Integer> validMoves = new ArrayList<>();
-        if (!graph.containsKey(position)) {
-            return validMoves;
-        }
-        for (int neighbor : graph.get(position)) {
-            if (!positions.containsKey(neighbor)) {
-                validMoves.add(neighbor);
-            }
-        }
-        return validMoves;
-    }
-    
-    /**
-     * Returns a list of contiguous indices starting from 'start' in the direction (dq, dr)
-     * that are occupied by the same player's pieces.
+     * Returns the list of pieces in the direction starting from start 
+     * that are owned by the same player's.
      *
      * @param start the starting cell index
-     * @param dq the change in q-coordinate per step
-     * @param dr the change in r-coordinate per step
-     * @return a list of contiguous cell indices
+     * @param dq the direction in the  q-coordinate
+     * @param dr the direction in the r-coordinate
+     * @return a list of indexes of the pieces in the same direction
      */
-    private List<Integer> getContiguousGroup(int start, int dq, int dr) {
-        List<Integer> group = new ArrayList<>();
+    private List<Integer> getListOfPiecesInDirection(int start, int dq, int dr) {
+        List<Integer> list = new ArrayList<>();
         int current = start;
         Player mover = positions.get(start);
-        group.add(current);
-        while (true) {
-            int next = getNextCellInDirection(current, dq, dr);
-            if (next == -1) break;
-            if (positions.containsKey(next) && positions.get(next).getName().equals(mover.getName())) {
-                group.add(next);
-                current = next;
-            } else {
-                break;
-            }
+        list.add(current);
+        int next = getNextCellInDirection(current, dq, dr);
+        while (next != -1 && positions.containsKey(next) && positions.get(next).getName().equals(mover.getName())) {
+            list.add(next);
+            current = next;
+            next = getNextCellInDirection(current, dq, dr);
         }
-        return group;
+        return list;
     }
 
     /**
@@ -385,8 +306,8 @@ public class Board {
      * Returns -1 if the cell is off-board.
      *
      * @param index the starting cell index
-     * @param dq the change in q-coordinate per step
-     * @param dr the change in r-coordinate per step
+    * @param dq the direction in the  q-coordinate
+     * @param dr the direction in the r-coordinate
      * @return the index of the next cell, or -1 if off-board
      */
     public int getNextCellInDirection(int index, int dq, int dr) {
@@ -398,6 +319,16 @@ public class Board {
         return (nextIndex == null) ? -1 : nextIndex;
     }
 
+    /**
+     * Returns the player at the specified position, or null if none.
+     *
+     * @param position the cell index
+     * @return the player at that cell, or null if empty
+     */
+    public Player getPlayerAt(int position) {
+        return positions.get(position);
+    }
+    
     /**
      * Returns the color of the piece at the provided position.
      *

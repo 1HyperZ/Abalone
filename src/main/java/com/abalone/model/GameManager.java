@@ -1,5 +1,7 @@
 package com.abalone.model;
 
+import java.util.Map;
+
 import com.abalone.model.utils.Move;
 import com.abalone.model.utils.Players.AIPlayer;
 import com.abalone.model.utils.Players.Player;
@@ -83,7 +85,7 @@ public class GameManager {
      */
     public void updatePlayersScores() {
         int humanCount  = 0, aiCount  = 0;
-        for (Player p : board.getPlayersOnBoard()) {
+        for (Player p : board.getPositionsMap().values()) {
             if (p.getName().equals(humanPlayer.getName())) humanCount++;
             if (p.getName().equals(aiPlayer.getName())) aiCount++;
         }
