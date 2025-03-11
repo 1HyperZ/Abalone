@@ -12,96 +12,69 @@ import com.abalone.model.utils.Players.Player;
 
 import javafx.scene.paint.Color;
 
+/**
+ * Represents the game board. It handles board state, validation of moves,
+ * move applications, and calculations of neighbors.
+ */
 public class Board {
-    private Map<Integer, List<Integer>> graph;
+    private Map<Integer, List<Integer>> graph; // Graph of neighbors for each cell
     private Map<Integer, Player> positions; // Stores player pieces on the board
     Player aiPlayer;
     Player humanPlayer;
     private Map<Integer, int[]> indexToCoord; 
     private Map<String, Integer> coordToIndex;
 
-
+    /**
+     * Constructs a new Board with the specified AI and human players.
+     * Initializes axial coordinate mappings, builds the neighbor graph, and places initial pieces.
+     *
+     * @param aiPlayer the AI player
+     * @param humanPlayer the human player
+     */
     public Board(Player aiPlayer, Player humanPlayer) {
         graph = new HashMap<>();
         positions = new HashMap<>();
         this.aiPlayer = aiPlayer;
         this.humanPlayer = humanPlayer;
-        initializeAxialMapping();  // Build axial coordinate mappings
+        initializeAxialHashMaps();  // Build axial coordinate mappings for the board
         initializeBoard();         // Build neighbor graph and place pieces
     }
     
-
     /**
-     * Initializes the hexagonal board by defining valid positions
-     * and their connections.
+     * Initializes the axial coordinate mappings for the hexagon board with radius of 4.
+     * inserts indexToCoord and coordToIndex mappings for each cell on the board.
      */
-    private void initializeBoard() {
-        // We'll use axial coordinates for a hexagon of radius 4.
-        // In axial coordinates (q, r), the board cells satisfy:
-        //    |q| <= 4, |r| <= 4, and |q + r| <= 4.
-        // We assign indices in row-order from top to bottom.
-        // The rows (from r = -4 to r = 4) have cell counts:
-        //    r = -4: 5 cells, r = -3: 6, r = -2: 7, r = -1: 8,
-        //    r =  0: 9, r =  1: 8, r =  2: 7, r =  3: 6, r =  4: 5.
-        
-        // Create maps to translate between axial coordinates and our index.
-        Map<String, Integer> coordToIndex = new HashMap<>();
-        Map<Integer, int[]> indexToCoord = new HashMap<>();
-        
-        // For convenience, we define the number of cells per row (from r = -4 to r = 4)
-        int[] rowCellCounts = {5, 6, 7, 8, 9, 8, 7, 6, 5};
-        // The corresponding r values (top row is r = -4, bottom is r = 4)
-        int rStart = -4;
-        
-        int index = 0;
-        // We'll also rebuild a 2D array "boardLayout" for debugging (optional)
-        List<int[]> boardRows = new ArrayList<>();
-        for (int i = 0; i < rowCellCounts.length; i++) {
-            int cellCount = rowCellCounts[i];
-            int r = rStart + i;
-            // For a hexagon of radius 4, the q values for a given r are:
-            // q_min = max(-4, -r-4) and q_max = min(4, -r+4).
-            int qMin = Math.max(-4, -r - 4);
-            int qMax = Math.min(4, -r + 4);
-            // The number of cells is qMax - qMin + 1, which should equal cellCount.
-            int[] rowIndices = new int[cellCount];
-            for (int q = qMin; q <= qMax; q++) {
-                // Create a key for (q, r)
-                String key = q + "," + r;
-                coordToIndex.put(key, index);
-                indexToCoord.put(index, new int[]{q, r});
-                rowIndices[q - qMin] = index;
-                index++;
-            }
-            boardRows.add(rowIndices);
-        }
-
-        // Axial coordinate mapping for a hexagon of radius 4 (61 cells)
+    private void initializeAxialHashMaps() {
         indexToCoord = new HashMap<>();
         coordToIndex = new HashMap<>();
-        // The rows (r from -4 to 4) have cell counts: {5,6,7,8,9,8,7,6,5} respectively.        
-        int idx = 0;
+        
+        int[] rowCellCounts = {5, 6, 7, 8, 9, 8, 7, 6, 5};
+        int rStart = -4;
+        int index = 0;
         for (int i = 0; i < rowCellCounts.length; i++) {
             int r = rStart + i;
-            // For a hexagon of radius 4, the q values range:
             int qMin = Math.max(-4, -r - 4);
             int qMax = Math.min(4, -r + 4);
             for (int q = qMin; q <= qMax; q++) {
-                indexToCoord.put(idx, new int[]{q, r});
-                coordToIndex.put(q + "," + r, idx);
-                idx++;
+                indexToCoord.put(index, new int[]{q, r});
+                coordToIndex.put(q + "," + r, index);
+                index++;
             }
         }
+    }
 
-        // At this point, index should be 61.
-        
-        // Now build the neighbor graph using axial directions.
-        // Standard axial directions: (1, 0), (-1, 0), (0, 1), (0, -1), (1, -1), (-1, 1)
+    /**
+     * Initializes the board by constructing the neighbor graph using axial directions,
+     * and placing the initial pieces on the board.
+     */
+    private void initializeBoard() {        
+        //build the neighbor graph using axial directions.
+        // axial directions are: (1, 0), (-1, 0), (0, 1), (0, -1), (1, -1), (-1, 1)
         int[][] directions = {
             {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, -1}, {-1, 1}
         };
         
-        // We'll use a temporary graph using sets to avoid duplicates.
+        //temporary graph using sets to not add duplicates.
         Map<Integer, Set<Integer>> tempGraph = new HashMap<>();
         for (int i = 0; i < 61; i++) {
             tempGraph.put(i, new HashSet<>());
@@ -111,42 +84,55 @@ public class Board {
             int[] coord = indexToCoord.get(i);
             int q = coord[0], r = coord[1];
             for (int[] d : directions) {
-                int nq = q + d[0];
-                int nr = r + d[1];
-                String neighborKey = nq + "," + nr;
+                int neighborQ = q + d[0];
+                int neighborR = r + d[1];
+                String neighborKey = neighborQ + "," + neighborR;
                 if (coordToIndex.containsKey(neighborKey)) {
                     int neighborIndex = coordToIndex.get(neighborKey);
                     tempGraph.get(i).add(neighborIndex);
                 }
             }
         }
-        
-        
-        // Convert the sets to lists and store in the graph field.
+    
+        // Convert the sets to lists and insert to the main graph.
         for (int i = 0; i < 61; i++) {
             graph.put(i, new ArrayList<>(tempGraph.get(i)));
         }
         
-        // --- Debugging: Print the neighbor list ---
-        System.out.println("=== DEBUG: NEIGHBOR LIST ===");
-        for (int i = 0; i < 61; i++) {
-            System.out.println("Position " + i + " neighbors: " + graph.get(i));
-        }
-        System.out.println("=== END DEBUG ===");
-        
-        // Finally, place the initial pieces.
         placeStartingPieces();
     }
     
+    /**
+     * Places the starting pieces for both players in the positions HashMap.
+     */
+    private void placeStartingPieces() {
+        int[] whitePositions = {
+            0, 1, 2, 3, 4,  
+            5, 6, 7, 8, 9, 10, 
+            13, 14, 15 
+        };
     
-
+        int[] blackPositions = {
+            60, 59, 58, 57, 56,  
+            55, 54, 53, 52, 51, 50, 
+            45, 46, 47 
+        };
     
-    
-    
+        for (int pos : whitePositions) {
+            positions.put(pos, aiPlayer);
+        }
+        for (int pos : blackPositions) {
+            positions.put(pos, humanPlayer);
+        }
+    }
     
     /**
-     * Given a move from cell 'from' to cell 'to', compute the next cell in that direction.
-     * Returns the index of the next cell, or -1 if off-board.
+     * Calcluates the next cell in the direction of 'from' to 'to'.
+     * Returns the index of the next cell, or -1 if off board.
+     *
+     * @param from the starting cell index
+     * @param to the destination cell index
+     * @return the index of the next cell, or -1 if its off board
      */
     public int getNextCell(int from, int to) {
         int[] fromCoord = indexToCoord.get(from);
@@ -159,68 +145,12 @@ public class Board {
         Integer nextIndex = coordToIndex.get(key);
         return (nextIndex == null) ? -1 : nextIndex;
     }
-
-
-    
+//----------------------------------------------------------------------------------------------------------------------------
     /**
- * Initializes the axial coordinate mappings for a hexagon of radius 4 (61 cells).
- * The rows (r from -4 to 4) have cell counts: {5,6,7,8,9,8,7,6,5}.
- */
-private void initializeAxialMapping() {
-    indexToCoord = new HashMap<>();
-    coordToIndex = new HashMap<>();
-    
-    int[] rowCellCounts = {5, 6, 7, 8, 9, 8, 7, 6, 5};
-    int rStart = -4;
-    int idx = 0;
-    for (int i = 0; i < rowCellCounts.length; i++) {
-        int r = rStart + i;
-        int qMin = Math.max(-4, -r - 4);
-        int qMax = Math.min(4, -r + 4);
-        for (int q = qMin; q <= qMax; q++) {
-            indexToCoord.put(idx, new int[]{q, r});
-            coordToIndex.put(q + "," + r, idx);
-            idx++;
-        }
-    }
-}
-
-
-    /**
-     * Places the initial pieces on the board.
-     */
-    private void placeStartingPieces() {
-        int[] whitePositions = {
-            0, 1, 2, 3, 4,  
-            5, 6, 7, 8, 9, 10, 
-            13, 14, 15 // Perfectly centered extra 3 white marbles in 3rd row
-        };
-    
-        int[] blackPositions = {
-            60, 59, 58, 57, 56,  
-            55, 54, 53, 52, 51, 50, 
-            45, 46, 47 // Perfectly centered extra 3 black marbles in 3rd row
-        };
-    
-        Player whitePlayer = humanPlayer; // Use the existing human player
-        Player blackPlayer = aiPlayer;    // Use the existing AI player
-
-    
-        // Assign white marbles
-        for (int pos : whitePositions) {
-            positions.put(pos, whitePlayer);
-        }
-    
-        // Assign black marbles
-        for (int pos : blackPositions) {
-            positions.put(pos, blackPlayer);
-        }
-    }
-    
-    
-
-    /**
-     * Checks if a move is valid.
+     * Checks if a given move is valid. Supports simple moves and push moves.
+     *
+     * @param move the move to validate
+     * @return true if the move is valid, false otherwise
      */
     public boolean isValidMove(Move move) {
         int from = move.getFrom();
@@ -240,27 +170,24 @@ private void initializeAxialMapping() {
         if (!isUnitDirection) {
             return false;
         }
-
-        // Get the contiguous group of your pieces starting at 'from'.
+        
+        // Get the contiguous group of the mover starting at 'from'.
         List<Integer> group = getContiguousGroup(from, dq, dr);
-        // The "leading" cell is the last cell in the group.
         int leading = group.get(group.size() - 1);
-        // Check the cell immediately in front of the group.
         int next = getNextCellInDirection(leading, dq, dr);
         
-        // Simple move: if next is on-board and empty.
+        // Simple move: if next cell is on-board and empty.
         if (next != -1 && !positions.containsKey(next)) {
             return true;
         }
         
-        // Otherwise, if next is occupied, attempt push.
+        // Push move: next must be occupied by opponent.
         Player mover = positions.get(from);
-        // If next is off-board (-1) or occupied by your own piece, push is not valid.
         if (next == -1 || mover.getName().equals(positions.get(next).getName())) {
             return false;
         }
         
-        // Count opponent contiguous group starting from 'next'.
+        // Count contiguous opponent group starting from 'next'.
         List<Integer> opponentGroup = new ArrayList<>();
         int current = next;
         while (current != -1 && positions.containsKey(current) &&
@@ -271,8 +198,8 @@ private void initializeAxialMapping() {
             current = nextOpponent;
         }
         
-        // Valid push if your group size > opponent group size,
-        // and the cell immediately after the opponent group is off-board or empty.
+        // Valid push if mover's group is larger than opponent group and
+        // the cell immediately after opponent group is off-board or empty.
         if (group.size() > opponentGroup.size()) {
             int pushDest = getNextCellInDirection(opponentGroup.get(opponentGroup.size() - 1), dq, dr);
             if (pushDest == -1 || !positions.containsKey(pushDest)) {
@@ -282,12 +209,11 @@ private void initializeAxialMapping() {
         return false;
     }
     
-    
-    
-    
-
     /**
-     * Applies a move if it is valid.
+     * Applies a valid move to the board.
+     * Supports both simple moves and push moves.
+     *
+     * @param move the move to apply
      */
     public void applyMove(Move move) {
         int from = move.getFrom();
@@ -299,14 +225,13 @@ private void initializeAxialMapping() {
         int dq = toCoord[0] - fromCoord[0];
         int dr = toCoord[1] - fromCoord[1];
         
-        // Get your contiguous group.
+        // Get the mover's contiguous group.
         List<Integer> group = getContiguousGroup(from, dq, dr);
         int leading = group.get(group.size() - 1);
         int next = getNextCellInDirection(leading, dq, dr);
         
-        // Simple move: move your group one cell forward.
+        // Simple move: move group one cell forward.
         if (next != -1 && !positions.containsKey(next)) {
-            // Move from the far end back to avoid overwriting.
             for (int i = group.size() - 1; i >= 0; i--) {
                 int pos = group.get(i);
                 Player mover = positions.remove(pos);
@@ -315,7 +240,6 @@ private void initializeAxialMapping() {
             }
         } else {
             // Push move.
-            // Count opponent contiguous group.
             List<Integer> opponentGroup = new ArrayList<>();
             int current = next;
             Player mover = positions.get(from);
@@ -331,14 +255,13 @@ private void initializeAxialMapping() {
                 int oppPos = opponentGroup.get(i);
                 int dest = getNextCellInDirection(oppPos, dq, dr);
                 if (dest == -1) {
-                    // Opponent ball is pushed off-board.
                     positions.remove(oppPos);
                 } else {
                     Player opp = positions.remove(oppPos);
                     positions.put(dest, opp);
                 }
             }
-            // Then, move your group forward.
+            // Then move your group forward.
             for (int i = group.size() - 1; i >= 0; i--) {
                 int pos = group.get(i);
                 Player m = positions.remove(pos);
@@ -348,11 +271,12 @@ private void initializeAxialMapping() {
         }
     }
     
-    
-    
-
     /**
-     * Gets a list of possible moves for a player.
+     * Returns a list of all possible moves for the specified player.
+     * Considers both simple moves and push moves.
+     *
+     * @param player the player for whom to get moves
+     * @return a list of valid moves
      */
     public List<Move> getPossibleMoves(Player player) {
         List<Move> moves = new ArrayList<>();
@@ -370,9 +294,13 @@ private void initializeAxialMapping() {
         return moves;
     }
     
-
+    /**
+     * Returns a list of all players currently on the board.
+     *
+     * @return a list of players on the board
+     */
     public List<Player> getPlayersOnBoard() {
-        return new ArrayList<>(positions.values()); // Returns all players with pieces on the board
+        return new ArrayList<>(positions.values());
     }
     
     /**
@@ -386,44 +314,62 @@ private void initializeAxialMapping() {
         }
     }
 
+    /**
+     * Checks whether a given position is valid on the board.
+     *
+     * @param position the position index
+     * @return true if the position exists on the board, false otherwise
+     */
     public boolean isValidPosition(int position) {
-        return graph.containsKey(position); // Ensures position exists in the board graph
+        return graph.containsKey(position);
     }
     
+    /**
+     * Returns the player at the specified position, or null if none.
+     *
+     * @param position the board cell index
+     * @return the player at that cell, or null if empty
+     */
     public Player getPlayerAt(int position) {
-        return positions.get(position); // Returns the player at this position (or null)
+        return positions.get(position);
     }
     
+    /**
+     * Returns a list of valid moves (empty neighboring positions) for the specified position.
+     *
+     * @param position the board cell index
+     * @return a list of valid move destinations
+     */
     public List<Integer> getValidMoves(int position) {
         List<Integer> validMoves = new ArrayList<>();
-    
-        // Ensure the position exists on the board
         if (!graph.containsKey(position)) {
             return validMoves;
         }
-    
-        // Get all possible moves (neighboring positions)
         for (int neighbor : graph.get(position)) {
-            if (!positions.containsKey(neighbor)) { // Check if the spot is empty
+            if (!positions.containsKey(neighbor)) {
                 validMoves.add(neighbor);
             }
         }
-    
         return validMoves;
     }
     
     /**
-     * Returns a list of contiguous indices (in-line) starting from 'start' that are occupied by the same player.
+     * Returns a list of contiguous indices starting from 'start' in the direction (dq, dr)
+     * that are occupied by the same player's pieces.
+     *
+     * @param start the starting cell index
+     * @param dq the change in q-coordinate per step
+     * @param dr the change in r-coordinate per step
+     * @return a list of contiguous cell indices
      */
     private List<Integer> getContiguousGroup(int start, int dq, int dr) {
         List<Integer> group = new ArrayList<>();
         int current = start;
         Player mover = positions.get(start);
-        // Add the starting cell.
         group.add(current);
         while (true) {
             int next = getNextCellInDirection(current, dq, dr);
-            if (next == -1) break; // Off-board
+            if (next == -1) break;
             if (positions.containsKey(next) && positions.get(next).getName().equals(mover.getName())) {
                 group.add(next);
                 current = next;
@@ -434,10 +380,14 @@ private void initializeAxialMapping() {
         return group;
     }
 
-
     /**
-     * Returns the index of the next cell in the given direction (dq, dr) from the cell at index.
-     * Returns -1 if off-board.
+     * Returns the index of the next cell in the given direction (dq, dr) from the specified cell.
+     * Returns -1 if the cell is off-board.
+     *
+     * @param index the starting cell index
+     * @param dq the change in q-coordinate per step
+     * @param dr the change in r-coordinate per step
+     * @return the index of the next cell, or -1 if off-board
      */
     public int getNextCellInDirection(int index, int dq, int dr) {
         int[] coord = indexToCoord.get(index);
@@ -448,11 +398,15 @@ private void initializeAxialMapping() {
         return (nextIndex == null) ? -1 : nextIndex;
     }
 
-
+    /**
+     * Returns the color of the piece at the provided position.
+     *
+     * @param position the board cell index
+     * @return WHITE if the piece belongs to AI, BLACK if it belongs to Human, or LIGHTGRAY if empty
+     */
     public Color getPieceColor(int position) {
         Player player = getPlayerAt(position);
         if (player == null) return Color.LIGHTGRAY;
-        return player.getName().equals("AI") ? Color.WHITE : Color.BLACK;
+        return player.getName().equals(aiPlayer.getName()) ? Color.WHITE : Color.BLACK;
     }
-
 }
