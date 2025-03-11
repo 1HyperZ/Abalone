@@ -18,7 +18,14 @@ import javafx.scene.layout.*;
 public class GameView {
     private Stage stage;
     private GameController controller;
+
+    private BorderPane root;
     private Pane boardGrid;
+    private HBox bottomPanel;
+    private HBox topPanel;
+    private StackPane boardContainer;
+    private Button restartButton;
+    private Button instructionsButton;
     private Label turnLabel;
     private Label humanScoreLabel;
     private Label aiScoreLabel;
@@ -36,21 +43,22 @@ public class GameView {
         this.aiScoreLabel = new Label("Player 2: 14");
         humanScoreLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
         aiScoreLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
-        HBox topPanel = new HBox(20, turnLabel, humanScoreLabel, aiScoreLabel);
+        topPanel = new HBox(20, turnLabel, humanScoreLabel, aiScoreLabel);
         topPanel.setAlignment(Pos.CENTER);
         topPanel.setPadding(new Insets(10));
-        StackPane boardContainer = new StackPane(boardGrid);
-        Button restartButton = new Button("Start New Game");
+        boardContainer = new StackPane(boardGrid);
+        restartButton = new Button("Start New Game");
         restartButton.setOnAction(e -> controller.startNewGame());
-        Button instructionsButton = new Button("Instructions");
+        instructionsButton = new Button("Instructions");
         instructionsButton.setOnAction(e -> showInstructions());
-        HBox bottomPanel = new HBox(20, restartButton, instructionsButton);
+        bottomPanel = new HBox(20, restartButton, instructionsButton);
         bottomPanel.setAlignment(Pos.CENTER);
         bottomPanel.setPadding(new Insets(10));
-        BorderPane root = new BorderPane();
+        root = new BorderPane();
         root.setTop(topPanel);
         root.setCenter(boardContainer);
         root.setBottom(bottomPanel);
+        
         Scene scene = new Scene(root, 800, 800);
         stage.setScene(scene);
         stage.show();
