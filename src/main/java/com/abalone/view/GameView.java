@@ -65,12 +65,12 @@ public class GameView {
     }
 
     /**
-     * Renders the game board using the Board object.
+     * Renders the game board with provided Board.
      * @param board the current game board state
      */
     public void renderBoard(Board board) {
         boardGrid.getChildren().clear();
-        double hexSize = 45; // board size can be changed 
+        double hexSize = 30; // board size 
         double xOffset = hexSize * Math.sqrt(3); // Horizontal spacing
         double yOffset = hexSize * 1.5; // Vertical spacing
         int[][] layout = {
