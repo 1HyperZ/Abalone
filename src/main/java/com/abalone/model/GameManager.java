@@ -1,7 +1,5 @@
 package com.abalone.model;
 
-import java.util.Map;
-
 import com.abalone.model.utils.Move;
 import com.abalone.model.utils.Players.AIPlayer;
 import com.abalone.model.utils.Players.Player;

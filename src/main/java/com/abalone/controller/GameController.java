@@ -26,7 +26,7 @@ public class GameController {
      * If a piece is already selected, try to move the previously selected piece to the new clicked piece.
      * @param clickedPosition the index of the clicked cell
      */
-    public void handleMove(int clickedPosition) {
+    public void clickedBoardCell(int clickedPosition) {
         System.out.println("Clicked position: " + clickedPosition);
         if (selectedPosition == -1) {
             // Select a human piece.

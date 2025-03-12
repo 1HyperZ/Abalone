@@ -2,7 +2,6 @@ package com.abalone.view;
 
 import com.abalone.controller.GameController;
 import com.abalone.model.Board;
-import com.abalone.model.utils.Players.Player;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -21,11 +20,12 @@ public class GameView {
 
     private BorderPane root;
     private Pane boardGrid;
+
     private HBox bottomPanel;
-    private HBox topPanel;
-    private StackPane boardContainer;
     private Button restartButton;
     private Button instructionsButton;
+
+    private HBox topPanel;
     private Label turnLabel;
     private Label humanScoreLabel;
     private Label aiScoreLabel;
@@ -38,15 +38,19 @@ public class GameView {
     public GameView(Stage stage) {
         this.stage = stage;
         this.boardGrid = new Pane();
+
+        //top panel
         this.turnLabel = new Label("Turn: Human");
         this.humanScoreLabel = new Label("Player 1: 14");
         this.aiScoreLabel = new Label("Player 2: 14");
+        turnLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
         humanScoreLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
         aiScoreLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
         topPanel = new HBox(20, turnLabel, humanScoreLabel, aiScoreLabel);
         topPanel.setAlignment(Pos.CENTER);
         topPanel.setPadding(new Insets(10));
-        boardContainer = new StackPane(boardGrid);
+
+        //bottom panel
         restartButton = new Button("Start New Game");
         restartButton.setOnAction(e -> controller.startNewGame());
         instructionsButton = new Button("Instructions");
@@ -54,9 +58,11 @@ public class GameView {
         bottomPanel = new HBox(20, restartButton, instructionsButton);
         bottomPanel.setAlignment(Pos.CENTER);
         bottomPanel.setPadding(new Insets(10));
+
+        //root layout
         root = new BorderPane();
         root.setTop(topPanel);
-        root.setCenter(boardContainer);
+        root.setCenter(boardGrid);
         root.setBottom(bottomPanel);
         
         Scene scene = new Scene(root, 800, 800);
@@ -79,8 +85,8 @@ public class GameView {
     public void renderBoard(Board board) {
         boardGrid.getChildren().clear();
         double hexSize = 30; // board size 
-        double xOffset = hexSize * Math.sqrt(3); // Horizontal spacing
-        double yOffset = hexSize * 1.5; // Vertical spacing
+        double xOffset = hexSize * Math.sqrt(3);
+        double yOffset = hexSize * 1.5; 
         int[][] layout = {
             {0,  1,  2,  3,  4},
             {5,  6,  7,  8,  9, 10},
@@ -103,17 +109,10 @@ public class GameView {
                 double yPos = centerY + row * yOffset;
                 Circle piece = new Circle(hexSize / 2);
                 piece.setUserData(position);
-                Player playerAtPos = board.getPlayerAt(position);
-                if (playerAtPos == null) {
-                    piece.setFill(Color.LIGHTGRAY);
-                } else {
-                    Color pieceColor = board.getPieceColor(position);
-                    piece.setFill(pieceColor);
-                }
-                final int cellIndex = position;
+                piece.setFill(board.getPieceColor(position));
                 piece.setOnMouseClicked(event -> {
                     if (controller.isHumanTurn()) {
-                        controller.handleMove(cellIndex);
+                        controller.clickedBoardCell(position);
                     }
                 });
                 piece.setLayoutX(xPos);
