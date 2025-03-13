@@ -5,19 +5,26 @@ import com.abalone.model.utils.Move;
 import com.abalone.model.utils.Players.Player;
 import com.abalone.view.GameView;
 
+import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
+
 /**
  * GameController class manages user moves and AI moves during the game.
  */
 public class GameController {
     private GameManager gameManager;
-    private GameView gameView;
+    private final GameView gameView;
     private boolean isHumanTurn;
-    private int selectedPosition = -1; // No piece selected at start so -1
+    private int selectedPosition;
+    private AnimationTimer gameLoop;
+
 
     public GameController(GameManager gameManager, GameView gameView) {
         this.gameManager = gameManager;
         this.gameView = gameView;
         this.isHumanTurn = true;
+        selectedPosition = -1; // No piece selected at start so -1
+        initGameLoop();
     }
 
     /**
@@ -27,6 +34,13 @@ public class GameController {
      * @param clickedPosition the index of the clicked cell
      */
     public void clickedBoardCell(int clickedPosition) {
+        if (gameManager.isGameOver()) {
+            gameView.showGameOver(gameManager.getWinner() + " wins!");
+            return;
+        }
+        if (!isHumanTurn) {
+            return;
+        }
         System.out.println("Clicked position: " + clickedPosition);
         if (selectedPosition == -1) {
             // Select a human piece.
@@ -46,11 +60,6 @@ public class GameController {
                 gameManager.getBoard().applyMove(move);
                 gameView.renderBoard(gameManager.getBoard());
                 switchTurn();
-                gameManager.updatePlayersScores();
-                gameView.updateScores(gameManager.getHumanScore(), gameManager.getAIScore());
-                if (gameManager.isGameOver()) {
-                    gameView.showGameOver(gameManager.getWinner() + " wins!");
-                }
             } else {
                 System.out.println("Invalid move from " + selectedPosition + " to " + clickedPosition);
             }
@@ -65,20 +74,6 @@ public class GameController {
     private void switchTurn() {
         isHumanTurn = !isHumanTurn;
         gameView.updateTurnLabel(isHumanTurn ? "Human" : "AI");
-        if (!isHumanTurn) {
-            applyAIMove(gameManager.getAIMove());
-        }
-    }
-
-    /**
-     * Makes a random valid move for the AI.
-        * @param selectedMove the selected move to apply 
-    */
-    private void applyAIMove(Move selectedMove) {
-        System.out.println("AI moves: " + selectedMove);
-        gameManager.getBoard().applyMove(selectedMove);
-        gameView.renderBoard(gameManager.getBoard());
-        switchTurn();
     }
 
     /**
@@ -95,8 +90,9 @@ public class GameController {
     public void startGame() {
         gameView.renderBoard(gameManager.getBoard());
         gameView.updateTurnLabel("Human");
+        gameLoop.start();
     }
-
+    
     /**
      * Resets the game state and starts a new game.
      */
@@ -107,5 +103,41 @@ public class GameController {
         gameManager.updatePlayersScores();
         gameView.updateScores(gameManager.getHumanScore(), gameManager.getAIScore());
         isHumanTurn = true;
+        gameLoop.start();
+    }
+
+    private void initGameLoop() {
+        gameLoop = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                // Check if game is over.
+                if (gameManager.isGameOver()) {
+                    gameLoop.stop();
+                    // Ensure UI updates happens.
+                    Platform.runLater(() -> {
+                        gameView.showGameOver(gameManager.getWinner() + " wins!");
+                    });
+                    return;
+                }
+
+                // If it's the AI's turn, apply AI move.
+                if (!isHumanTurn) {
+                    Move aiMove = gameManager.getAIMove();
+                    System.out.println("AI moves: " + aiMove);
+                    gameManager.getBoard().applyMove(aiMove);
+                    gameManager.updatePlayersScores();
+
+                    // Ensure UI updates happens.
+                    Platform.runLater(() -> {
+                        gameView.renderBoard(gameManager.getBoard());
+                        gameManager.updatePlayersScores();
+                        gameView.updateScores(gameManager.getHumanScore(), gameManager.getAIScore());
+                        gameView.updateTurnLabel("Human");
+                    });
+                    isHumanTurn = true;
+                }
+                // Otherwise, wait for human move through clickedBoardCell function.
+            }
+        };
     }
 }

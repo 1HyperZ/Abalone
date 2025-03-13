@@ -17,13 +17,13 @@ import javafx.scene.paint.Color;
  * move applications, and calculations of neighbors.
  */
 public class Board {
-    private Map<Integer, List<Integer>> graph; // Graph of neighbors for each cell
-    private Map<Integer, Player> positions; // Stores player pieces on the board
-    private Player aiPlayer;
-    private Player humanPlayer;
-    private Map<Integer, int[]> indexToCoord; 
-    private Map<String, Integer> coordToIndex;
-    private List<int[]> directions ;
+    private final Map<Integer, List<Integer>> graph; // Graph of neighbors for each cell
+    private final Map<Integer, Player> positions; // Stores player pieces on the board
+    private final Player aiPlayer;
+    private final Player humanPlayer;
+    private final Map<Integer, int[]> indexToCoord; 
+    private final Map<String, Integer> coordToIndex;
+    private final List<int[]> directions ;
 
 
     /**
@@ -36,6 +36,8 @@ public class Board {
     public Board(Player aiPlayer, Player humanPlayer) {
         graph = new HashMap<>();
         positions = new HashMap<>();
+        indexToCoord = new HashMap<>();
+        coordToIndex = new HashMap<>();
         this.aiPlayer = aiPlayer;
         this.humanPlayer = humanPlayer;
         directions = List.of(new int[]{1, 0}, new int[]{-1, 0}, new int[]{0, 1}, new int[]{0, -1}, new int[]{1, -1}, new int[]{-1, 1}); //Create a list of directions
@@ -50,9 +52,6 @@ public class Board {
      * inserts indexToCoord and coordToIndex mappings for each cell on the board.
      */
     private void initializeAxialHashMaps() {
-        indexToCoord = new HashMap<>();
-        coordToIndex = new HashMap<>();
-        
         int[] rowCellCounts = {5, 6, 7, 8, 9, 8, 7, 6, 5};
         int rStart = -4;
         int index = 0;

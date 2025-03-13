@@ -5,9 +5,9 @@ import com.abalone.model.utils.Players.AIPlayer;
 import com.abalone.model.utils.Players.Player;
 
 public class GameManager {
-    private Board board;
-    private Player humanPlayer;
-    private AIPlayer aiPlayer;
+    private final Board board;
+    private final Player humanPlayer;
+    private final AIPlayer aiPlayer;
     private boolean isHumanTurn;
     private int humanScore;
     private int aiScore;

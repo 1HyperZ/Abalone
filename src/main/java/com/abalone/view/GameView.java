@@ -2,33 +2,36 @@ package com.abalone.view;
 
 import com.abalone.controller.GameController;
 import com.abalone.model.Board;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
-import javafx.scene.layout.*;
 
 
 public class GameView {
-    private Stage stage;
+    private final Stage stage;
     private GameController controller;
 
-    private BorderPane root;
-    private Pane boardGrid;
+    private final BorderPane root;
+    private final Pane boardGrid;
 
-    private HBox bottomPanel;
-    private Button restartButton;
-    private Button instructionsButton;
+    private final HBox bottomPanel;
+    private final Button restartButton;
+    private final Button instructionsButton;
 
-    private HBox topPanel;
-    private Label turnLabel;
-    private Label humanScoreLabel;
-    private Label aiScoreLabel;
+    private final HBox topPanel;
+    private final Label turnLabel;
+    private final Label humanScoreLabel;
+    private final Label aiScoreLabel;
 
     /**
      * Initializes the GameView, sets up the top panel with turn and score labels,
