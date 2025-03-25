@@ -49,6 +49,9 @@ public class GameView {
         turnLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
         humanScoreLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
         aiScoreLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
+        turnLabel.setTextFill(Color.WHITE);
+        humanScoreLabel.setTextFill(Color.WHITE);
+        aiScoreLabel.setTextFill(Color.WHITE);
         topPanel = new HBox(20, turnLabel, humanScoreLabel, aiScoreLabel);
         topPanel.setAlignment(Pos.CENTER);
         topPanel.setPadding(new Insets(10));
@@ -67,6 +70,8 @@ public class GameView {
         root.setTop(topPanel);
         root.setCenter(boardGrid);
         root.setBottom(bottomPanel);
+        root.setStyle("-fx-background-color: #333330;");
+
         
         Scene scene = new Scene(root, 800, 800);
         stage.setScene(scene);

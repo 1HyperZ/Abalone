@@ -284,18 +284,20 @@ public class Board {
      * @param start the starting cell index
      * @param dq the direction in the  q-coordinate
      * @param dr the direction in the r-coordinate
-     * @return a list of indexes of the pieces in the same direction
+     * @return a list of indexes of the pieces in the same direction or empty list if empty piece
      */
-    private List<Integer> getListOfPiecesInDirection(int start, int dq, int dr) {
+    List<Integer> getListOfPiecesInDirection(int start, int dq, int dr) {
         List<Integer> list = new ArrayList<>();
         int current = start;
         Player mover = positions.get(start);
-        list.add(current);
-        int next = getNextCellInDirection(current, dq, dr);
-        while (next != -1 && positions.containsKey(next) && positions.get(next).getName().equals(mover.getName())) {
-            list.add(next);
-            current = next;
-            next = getNextCellInDirection(current, dq, dr);
+        if (mover != null) {
+            list.add(current);
+            int next = getNextCellInDirection(current, dq, dr);
+            while (next != -1 && positions.containsKey(next) && positions.get(next).getName().equals(mover.getName())) {
+                list.add(next);
+                current = next;
+                next = getNextCellInDirection(current, dq, dr);
+            }
         }
         return list;
     }
@@ -336,7 +338,20 @@ public class Board {
      */
     public Color getPieceColor(int position) {
         Player player = getPlayerAt(position);
-        if (player == null) return Color.LIGHTGRAY;
+        if (player == null) return Color.GRAY;
         return player.getName().equals(aiPlayer.getName()) ? Color.WHITE : Color.BLACK;
     }
+
+    public Map<Integer, Player> getPositions() {
+        return positions;
+    }
+
+    public Map<Integer, int[]> getIndexToCoord() {
+        return indexToCoord;
+    }
+
+    public Map<String, Integer> getCoordToIndex() {
+        return coordToIndex;
+    }
+    
 }
