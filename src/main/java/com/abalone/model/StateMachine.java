@@ -1,10 +1,10 @@
 package com.abalone.model;
 
-import com.abalone.model.utils.Move;
-import com.abalone.model.utils.Players.AIPlayer;
-import com.abalone.model.utils.Players.Player;
 import java.util.List;
 import java.util.Random;
+
+import com.abalone.model.utils.Move;
+import com.abalone.model.utils.Players.AIPlayer;
 
 /**
  * Implements a state machine for AI decision-making.
@@ -34,6 +34,7 @@ public class StateMachine {
         System.out.println("Best move score: " + bestScore);
         return bestMove;
     }
+    // סיבוכיות n*m
 
     /**
      * Evaluates a given move by selecting a scoring function based on whether
