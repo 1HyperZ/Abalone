@@ -46,6 +46,26 @@ public class Board {
         placeStartingPieces();
 
     }
+
+    private Board(Board other) {
+        this.graph = other.graph;  
+        this.indexToCoord = other.indexToCoord;
+        this.coordToIndex = other.coordToIndex; 
+        this.directions = other.directions; 
+        this.aiPlayer = other.aiPlayer; 
+        this.humanPlayer = other.humanPlayer;
+        // copy the positions map so that modifications don't affect the original board.
+        this.positions = new HashMap<>(other.positions);
+    }
+    
+    /**
+     * Creates and returns a copy of this Board.
+     *
+     * @return a new Board instance with the same state.
+     */
+    public Board clone() {
+        return new Board(this);
+    }
     
     /**
      * Initializes the axial coordinate mappings for the hexagon board with radius of 4.
@@ -354,4 +374,39 @@ public class Board {
         return coordToIndex;
     }
     
+    public Player opponentPlayer(Player player){
+        if(player.getName().equals(aiPlayer.getName())) {
+            return humanPlayer;
+        } else {
+            return aiPlayer;
+        }
+    }
+
+    /**
+     * Counts the number of winning moves available for the opponent of the player given.
+     *
+     * @param board the current board state
+     * @param opponent your player
+     * @return the count of winning moves for the opponent
+     */
+    public int countOpponentWinningMoves(Board board, Player player) {
+        int winningMoves = 0;
+        List<Move> moves = board.getPossibleMoves(opponentPlayer(player));
+        for (Move move : moves) {
+            Board simulatedBoard = board.clone(); 
+            simulatedBoard.applyMove(move);
+            int count = 0;
+            for (Player p : simulatedBoard.getPositionsMap().values()) {
+                if (p.getName().equals(player.getName())) {
+                    count++;
+                }
+            }
+
+            if (count <= 8) {
+                winningMoves++;
+            }
+        }
+        return winningMoves;
+    }
+
 }

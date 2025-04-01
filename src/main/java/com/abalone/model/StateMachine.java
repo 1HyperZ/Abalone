@@ -5,6 +5,7 @@ import java.util.Random;
 
 import com.abalone.model.utils.Move;
 import com.abalone.model.utils.Players.AIPlayer;
+import com.abalone.model.utils.Players.Player;
 
 /**
  * Implements a state machine for AI decision-making.
@@ -47,10 +48,19 @@ public class StateMachine {
      */
     private int evaluateMove(Move move, Board board, AIPlayer aiPlayer) {
         int score = 0;
-        
+        if (!board.isValidMove(move)) {
+            return 0;
+        }
+
         score += evaluatePushMove(move, board, aiPlayer);
         
         score += evaluateCenteringMove(move, board, aiPlayer);
+
+        score += evaluateDefensiveMove(move, board, aiPlayer);
+
+        score += evaluateBoardControl(move, board, aiPlayer);
+
+        score += evaluateEdgeVulnerability(move, board, aiPlayer);
 
         // Add a small random factor to break ties.
         score += new Random().nextInt(10);
@@ -84,10 +94,20 @@ public class StateMachine {
         int opponentSize = opponentGroup.size();
 
         if (moverSize > opponentSize && opponentSize > 0) {
-            score += 50 * (moverSize - opponentSize);
+            score += 10 * (moverSize - opponentSize);
             int pushDest = board.getNextCellInDirection(opponentGroup.get(opponentGroup.size() - 1), dq, dr);
+    
             if (pushDest == -1) {
                 score += 100;
+            }
+            else {
+                int[] origCoord = board.getIndexToCoord().get(opponentGroup.get(opponentGroup.size() - 1));
+                int[] destCoord = board.getIndexToCoord().get(pushDest);
+                int origEdgeDistance = getEdgeDistance(origCoord);
+                int destEdgeDistance = getEdgeDistance(destCoord);
+                if (destEdgeDistance < origEdgeDistance) {
+                    score += 30 * (origEdgeDistance - destEdgeDistance);
+                }
             }
         }
         return score;
@@ -120,10 +140,134 @@ public class StateMachine {
         int centerDistanceFrom = hexDistance(leadingPieceFromCoord, new int[]{0, 0});
         int centerDistanceTo = hexDistance(leadingPieceToCoord, new int[]{0, 0});
         if (centerDistanceTo < centerDistanceFrom) {
-            score += (centerDistanceFrom - centerDistanceTo) * 10;
+            score += (centerDistanceFrom - centerDistanceTo) * 20;
         }
         return score;
     }
+
+    /**
+     * Strategy: Defensive Move.
+     * Evaluates if applying the move blocks the opponent from achieving a winning move next turn.
+     *
+     * @param move the move to evaluate
+     * @param board the current board state
+     * @param aiPlayer the AI player
+     * @return a bonus score if the move blocks opponent winning threats; 0 otherwise.
+     */
+    private int evaluateDefensiveMove(Move move, Board board, AIPlayer aiPlayer) {
+        int bonus = 0;
+        Board simulatedBoard = board.clone();
+        simulatedBoard.applyMove(move);
+        int oppWinsBefore = board.countOpponentWinningMoves(board, aiPlayer);
+        int oppWinsAfter = board.countOpponentWinningMoves(simulatedBoard, aiPlayer);
+        if (oppWinsAfter < oppWinsBefore) {
+            bonus = 10000 * (oppWinsBefore - oppWinsAfter);
+            System.out.println("Prevented " + (oppWinsBefore - oppWinsAfter) + " opponent winning moves");
+        }
+        return bonus;
+    }
+
+    /**
+     * Strategy: Board Control.
+     * Simulates the board after applying the move and compares the mobility (the number
+     * of valid moves) for the AI versus the opponent for before the move and after the move.
+     *
+     * @param move the move to evaluate
+     * @param board the current board state
+     * @param aiPlayer the AI player making the move
+     * @return a bonus score for board control
+     */
+    private int evaluateBoardControl(Move move, Board board, AIPlayer aiPlayer) {
+        Board simulatedBoard = board.clone();
+        simulatedBoard.applyMove(move);
+        
+        // Calculate mobility for AI before the move.
+        int beforeAIMobility = board.getPossibleMoves(aiPlayer).size();
+        
+        // Calculate mobility before for the human opponent.
+        int beforeOpponentMobility = board.getPossibleMoves(board.opponentPlayer(aiPlayer)).size();
+        
+        // Calculate mobility for AI after the move.
+        int afterAIMobility = simulatedBoard.getPossibleMoves(aiPlayer).size();
+        
+        // Calculate mobility for the human opponent.
+        int afterOpponentMobility = simulatedBoard.getPossibleMoves(board.opponentPlayer(aiPlayer)).size();
+        
+        // The bonus is calculated using the difference in mobility for the before and after.
+        int bonus = ((afterAIMobility - afterOpponentMobility) - (beforeAIMobility - beforeOpponentMobility))* 5;
+
+        return bonus;
+    }
+
+    /**
+     * Strategy: Edge Vulnerability.
+     * checks if the human (opponent) can push any AI pieces off-board in their next move.
+     * Returns a penalty if such moves are available.
+     *
+     * @param move the candidate AI move to evaluate
+     * @param board the current board state
+     * @param aiPlayer the AI player making the move
+     * @return a negative penalty score if the move leaves AI vulnerable, 0 otherwise.
+     */
+    private int evaluateEdgeVulnerability(Move move, Board board, AIPlayer aiPlayer) {
+        int beforePushingOfEdgeOppertunities = 0;
+        int afterPushingOfEdgeOppertunities = 0;
+
+        Board simulatedBoard = board.clone();
+        simulatedBoard.applyMove(move);
+        
+        Player humanOpponent = board.opponentPlayer(aiPlayer);
+
+        List<Move> beforeOpponentMoves = board.getPossibleMoves(humanOpponent);
+        for (Move oppMove : beforeOpponentMoves) {
+            // Check if the opponent's move is a push move that pushes an AI piece off-board.
+            int from = oppMove.getFrom();
+            int[] fromCoord = board.getIndexToCoord().get(from);
+            int[] toCoord = board.getIndexToCoord().get(oppMove.getTo());
+            int dq = toCoord[0] - fromCoord[0];
+            int dr = toCoord[1] - fromCoord[1];
+            
+            // Only consider push moves (destination cell is occupied).
+            if (board.getPlayerAt(oppMove.getTo()) != null) {
+                List<Integer> oppGroup = board.getListOfPiecesInDirection(from, dq, dr);
+                int leadingOpp = oppGroup.get(oppGroup.size() - 1);
+                int next = board.getNextCellInDirection(leadingOpp, dq, dr);
+                List<Integer> opponentGroup = board.getListOfPiecesInDirection(next, dq, dr);
+                if(opponentGroup.size() > 0) {
+                    int pushDest = board.getNextCellInDirection(opponentGroup.get(opponentGroup.size() - 1), dq, dr);
+                    if (pushDest == -1) {
+                        beforePushingOfEdgeOppertunities++; // push off edge move
+                    }
+                }
+            }
+        }
+
+        List<Move> afterOpponentMoves = simulatedBoard.getPossibleMoves(humanOpponent);
+        for (Move oppMove : afterOpponentMoves) {
+            // Check if the opponent's move is a push move that pushes an AI piece off-board.
+            int from = oppMove.getFrom();
+            int[] fromCoord = simulatedBoard.getIndexToCoord().get(from);
+            int[] toCoord = simulatedBoard.getIndexToCoord().get(oppMove.getTo());
+            int dq = toCoord[0] - fromCoord[0];
+            int dr = toCoord[1] - fromCoord[1];
+            
+            // Only consider push moves (destination cell is occupied).
+            if (simulatedBoard.getPlayerAt(oppMove.getTo()) != null) {
+                List<Integer> oppGroup = simulatedBoard.getListOfPiecesInDirection(from, dq, dr);
+                int leadingOpp = oppGroup.get(oppGroup.size() - 1);
+                int next = simulatedBoard.getNextCellInDirection(leadingOpp, dq, dr);
+                List<Integer> opponentGroup = simulatedBoard.getListOfPiecesInDirection(next, dq, dr);
+                if(opponentGroup.size() > 0) {
+                    int pushDest = simulatedBoard.getNextCellInDirection(opponentGroup.get(opponentGroup.size() - 1), dq, dr);
+                    if (pushDest == -1) {
+                        afterPushingOfEdgeOppertunities++; // push off edge move
+                    }
+                }
+            }
+        }
+        return 200 * (beforePushingOfEdgeOppertunities - afterPushingOfEdgeOppertunities);
+    }
+
 
     /**
      * Computes the hexagonal distance between two axial coordinates.
@@ -139,4 +283,20 @@ public class StateMachine {
         int ds = Math.abs((a[0] + a[1]) - (b[0] + b[1]));
         return Math.max(dq, Math.max(dr, ds));
     }
+
+    /**
+     * Computes the distance of a coordinate from the edge .
+     * A cell on the edge will have an edge distance of 0.
+     *
+     * @param coord the axial coordinate [q, r]
+     * @return the edge distance
+     */
+    private int getEdgeDistance(int[] coord) {
+        int q = coord[0], r = coord[1];
+        int d1 = 4 - Math.abs(q);
+        int d2 = 4 - Math.abs(r);
+        int d3 = 4 - Math.abs(q + r);
+        return Math.min(d1, Math.min(d2, d3));
+    }
+
 }
