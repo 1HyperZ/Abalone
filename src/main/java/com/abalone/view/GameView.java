@@ -198,10 +198,10 @@ public class GameView {
         alert.setTitle("Game Instructions");
         alert.setHeaderText("How to Play Abalone");
         alert.setContentText(
-            "1. Select one of your marbles (or a contiguous group) by clicking it.\n" +
-            "2. Move it to an adjacent cell or push opponent marbles.\n" +
-            "3. The first to push 6 opponent marbles off the board wins.\n" +
-            "..."
+            "The aim of the game is to eject six of the opponent's marbles from the board.\n"
+            + "You can move up to eight marbles of your color,\n"
+            + "which must be connected in a straight line,\n"
+            + "if the destination fields are free or occupied by a minor number of opponent's marbles."
         );
         alert.showAndWait();
     }
