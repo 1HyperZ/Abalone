@@ -31,6 +31,8 @@ public class GameController {
      * Called when there is a click on a board cell.
      * If no piece is selected, highlights a human piece.
      * If a piece is already selected, try to move the previously selected piece to the new clicked piece.
+     * O(n)
+     * 
      * @param clickedPosition the index of the clicked cell
      */
     public void clickedBoardCell(int clickedPosition) {
@@ -106,8 +108,14 @@ public class GameController {
         gameLoop.start();
     }
 
+    /**
+     * Initializes the game loop for the animation timer.
+     * O(n^3)
+     * 
+     * The game loop checks if the game is over and updates the UI accordingly.
+     */
     private void initGameLoop() {
-        gameLoop = new AnimationTimer() {
+        gameLoop = new AnimationTimer() { // O()
             @Override
             public void handle(long now) {
                 // Check if game is over.
@@ -122,7 +130,7 @@ public class GameController {
 
                 // If it's the AI's turn, apply AI move.
                 if (!isHumanTurn) {
-                    Move aiMove = gameManager.getAIMove();
+                    Move aiMove = gameManager.getAIMove(); // O(n^3)
                     System.out.println("AI moves: " + aiMove);
                     gameManager.getBoard().applyMove(aiMove);
                     gameManager.updatePlayersScores();
