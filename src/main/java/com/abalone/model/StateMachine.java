@@ -15,7 +15,8 @@ public class StateMachine {
 
     /**
      * Determines the best move for the AI by evaluating all valid moves.
-     *
+     * O(n^3)
+     * 
      * @param board the current board state
      * @param aiPlayer the AI player
      * @return the move with the highest evaluation score, or null if no moves exist
@@ -25,8 +26,8 @@ public class StateMachine {
         if (moves.isEmpty()) return null;
         Move bestMove = null;
         int bestScore = Integer.MIN_VALUE;
-        for (Move move : moves) {
-            int score = evaluateMove(move, board, aiPlayer);
+        for (Move move : moves) { // O(n^3)
+            int score = evaluateMove(move, board, aiPlayer); // O(n^2)
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = move;
@@ -35,12 +36,12 @@ public class StateMachine {
         System.out.println("Best move score: " + bestScore);
         return bestMove;
     }
-    // סיבוכיות n*m
 
     /**
      * Evaluates a given move by selecting a scoring function based on whether
      * the move is a push or a simple move.
-     *
+     * O(n^2)
+     * 
      * @param move the move to evaluate
      * @param board the current board state
      * @param aiPlayer the AI player making the move
@@ -71,6 +72,7 @@ public class StateMachine {
      * Evaluates a push move.
      * Rewards moves where the mover's contiguous group is larger than the opponent's,
      * and gives extra bonus if an opponent piece is pushed off-board.
+     * O(n)
      *
      * @param move the move to evaluate
      * @param board the current board state
@@ -85,7 +87,7 @@ public class StateMachine {
         int dq = toCoord[0] - fromCoord[0];
         int dr = toCoord[1] - fromCoord[1];
 
-        List<Integer> moverGroup = board.getListOfPiecesInDirection(from, dq, dr);
+        List<Integer> moverGroup = board.getListOfPiecesInDirection(from, dq, dr); //O(n)
         int moverSize = moverGroup.size();
         int moverLeading = moverGroup.get(moverGroup.size() - 1);
 
@@ -115,7 +117,8 @@ public class StateMachine {
 
     /**
      * Evaluates a simple move by rewarding moves that bring pieces closer to the center (0,0).
-     *
+     * O(n)
+     * 
      * @param move the move to evaluate
      * @param board the current board state
      * @param aiPlayer the AI player making the move
@@ -130,7 +133,7 @@ public class StateMachine {
         int dq = toCoord[0] - fromCoord[0];
         int dr = toCoord[1] - fromCoord[1];
 
-        List<Integer> group = board.getListOfPiecesInDirection(from, dq, dr);
+        List<Integer> group = board.getListOfPiecesInDirection(from, dq, dr); //O(n)
         int leadingPieceFromIndex = group.get(group.size() - 1);
         int leadingPieceToIndex = board.getNextCellInDirection(leadingPieceFromIndex, dq, dr);
 
@@ -148,7 +151,8 @@ public class StateMachine {
     /**
      * Strategy: Defensive Move.
      * Evaluates if applying the move blocks the opponent from achieving a winning move next turn.
-     *
+     * O(n^2)
+     * 
      * @param move the move to evaluate
      * @param board the current board state
      * @param aiPlayer the AI player
@@ -158,7 +162,7 @@ public class StateMachine {
         int bonus = 0;
         Board simulatedBoard = board.clone();
         simulatedBoard.applyMove(move);
-        int oppWinsBefore = board.countOpponentWinningMoves(board, aiPlayer);
+        int oppWinsBefore = board.countOpponentWinningMoves(board, aiPlayer); // O(n^2)
         int oppWinsAfter = board.countOpponentWinningMoves(simulatedBoard, aiPlayer);
         if (oppWinsAfter < oppWinsBefore) {
             bonus = 10000 * (oppWinsBefore - oppWinsAfter);
@@ -171,7 +175,8 @@ public class StateMachine {
      * Strategy: Board Control.
      * Simulates the board after applying the move and compares the mobility (the number
      * of valid moves) for the AI versus the opponent for before the move and after the move.
-     *
+     *  O(n)
+     * 
      * @param move the move to evaluate
      * @param board the current board state
      * @param aiPlayer the AI player making the move
@@ -203,7 +208,8 @@ public class StateMachine {
      * Strategy: Edge Vulnerability.
      * checks if the human (opponent) can push any AI pieces off-board in their next move.
      * Returns a penalty if such moves are available.
-     *
+     * O(n^2)
+     * 
      * @param move the candidate AI move to evaluate
      * @param board the current board state
      * @param aiPlayer the AI player making the move
@@ -218,8 +224,8 @@ public class StateMachine {
         
         Player humanOpponent = board.opponentPlayer(aiPlayer);
 
-        List<Move> beforeOpponentMoves = board.getPossibleMoves(humanOpponent);
-        for (Move oppMove : beforeOpponentMoves) {
+        List<Move> beforeOpponentMoves = board.getPossibleMoves(humanOpponent); 
+        for (Move oppMove : beforeOpponentMoves) { // O(n^2)
             // Check if the opponent's move is a push move that pushes an AI piece off-board.
             int from = oppMove.getFrom();
             int[] fromCoord = board.getIndexToCoord().get(from);

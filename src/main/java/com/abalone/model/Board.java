@@ -166,7 +166,8 @@ public class Board {
 
     /**
      * Checks if a given move is valid.
-     *
+     *  O(n) where n is the number of pieces on the board.
+     * 
      * @param move the move to validate
      * @return true if the move is valid, false otherwise
      */
@@ -186,7 +187,7 @@ public class Board {
         }
         
         // Get the list of pieces in the direction starting at 'from'.
-        List<Integer> group = getListOfPiecesInDirection(from, dq, dr);
+        List<Integer> group = getListOfPiecesInDirection(from, dq, dr); // O(n)
         int leading = group.get(group.size() - 1);
         int next = getNextCellInDirection(leading, dq, dr);
         
@@ -218,7 +219,8 @@ public class Board {
     
     /**
      * Applies a valid move to the board.
-     *
+     * O(n) where n is the number of pieces on the board.
+     * 
      * @param move the move to apply
      */
     public void applyMove(Move move) {
@@ -232,7 +234,7 @@ public class Board {
         int dr = toCoord[1] - fromCoord[1];
         
         // Get the mover's list of pieces in the same direction.
-        List<Integer> group = getListOfPiecesInDirection(from, dq, dr);
+        List<Integer> group = getListOfPiecesInDirection(from, dq, dr); // O(n)
         int leadingPiece = group.get(group.size() - 1); //leading piece in the direction of the move.
         int next = getNextCellInDirection(leadingPiece, dq, dr);
         
@@ -271,6 +273,7 @@ public class Board {
     
     /**
      * Returns a list of all possible moves for the specified player.
+     * O(n) where n is the number of pieces on the board.
      * 
      * @param player the player to get possible moves for
      * @return a list of valid moves
@@ -384,7 +387,8 @@ public class Board {
 
     /**
      * Counts the number of winning moves available for the opponent of the player given.
-     *
+     * O(n^2) where n is the number of pieces on the board.
+     * 
      * @param board the current board state
      * @param opponent your player
      * @return the count of winning moves for the opponent
